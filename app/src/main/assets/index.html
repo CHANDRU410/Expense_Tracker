@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+<title>SpendSense</title><link rel="stylesheet" href="style.css"><script defer src="app.js"></script></head>
+<body><main>
+<header><span class="brand"><i aria-hidden="true">S</i>SpendSense</span><button id="tracking" class="status">SMS tracking</button></header>
+<div class="title"><h1 id="pageTitle">Overview</h1><button id="dates" class="range" aria-label="Select date range">Date range ▾</button></div>
+<section id="overview">
+<article class="hero"><div class="weave" aria-hidden="true"></div><div class="heroContent"><div>Net cash flow</div><strong id="net">₹0</strong>
+<div class="split"><div><small>↙ Income</small><b id="income">₹0</b></div><div><small>↗ Expenses</small><b id="expenses">₹0</b></div></div></div></article>
+<article class="panel"><h2>Spending by category</h2><div class="wheel"><canvas id="donut" width="320" height="320" aria-hidden="true"></canvas><div><small>Expenses</small><b id="wheelTotal"></b></div></div><div id="legend"></div></article>
+<article class="panel"><h2>Spending trend</h2><div id="trend"></div></article>
+<div class="sectionTitle"><h2>Recent activity</h2><button id="all" class="link">View all →</button></div><div id="recent" class="panel rows"></div>
+</section>
+<section id="activity" hidden><div class="panel filters"><input id="search" aria-label="Search transactions" type="search" placeholder="Search merchant, category or amount">
+<div class="types" id="types"><button data-type="all">All</button><button data-type="expense">Expenses</button><button data-type="income">Income</button></div><button id="clearCat" hidden></button></div>
+<div class="sectionTitle"><h2>Transactions</h2><span id="count"></span></div><div id="results" class="panel rows"></div><button id="more" hidden>Show more transactions</button></section>
+<div class="import"><button id="import">Import bank SMS for this range</button></div>
+</main><nav aria-label="Main navigation"><button id="homeTab">◉ &nbsp;Overview</button><button id="add" aria-label="Add transaction">＋</button><button id="activityTab">☷ &nbsp;Activity</button></nav>
+<div id="overlay" hidden><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="rangeTitle"><div class="sectionTitle"><h2 id="rangeTitle">Date range</h2><button id="close" aria-label="Close">×</button></div>
+<p>Select up to six calendar months.</p><div class="types" id="presets"><button data-preset="month">This month</button><button data-preset="30">Last 30 days</button><button data-preset="6">6 months</button></div>
+<label>From<input id="from" type="date" required></label><label>Through<input id="to" type="date" required></label>
+<p id="error" role="alert"></p><button id="apply" class="primary">Apply range</button></section></div>
+</body></html>

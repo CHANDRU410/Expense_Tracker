@@ -21,6 +21,8 @@ jobs:
           gradle-version: '8.9'
       - name: Install Android SDK
         run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"'
+      - name: Test dashboard interactions
+        run: python3 tests/dashboard.py
       - name: Test, build and verify APK
         env:
           STORE_DATA: ${{ secrets.SIGNING_STORE_BASE64 }}
@@ -50,3 +52,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "build-$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT" SpendSense.apk SpendSense.apk.sha256 --target "$GITHUB_SHA" --title "SpendSense · build $GITHUB_RUN_NUMBER" --notes "Download SpendSense.apk on your Android phone. See README for tracking coverage and signing information."
+

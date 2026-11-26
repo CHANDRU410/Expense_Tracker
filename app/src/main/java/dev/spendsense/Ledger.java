@@ -17,11 +17,11 @@ final class Ledger extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         throw new IllegalStateException("Unsupported schema migration");
     }
-    void record(Parser parsed, long time) {
+    boolean record(Parser parsed, long time) {
         ContentValues row = values(parsed.paise, parsed.credit, parsed.merchant, parsed.category);
         row.put("time", time);
         row.put("fingerprint", parsed.key);
-        getWritableDatabase().insertWithOnConflict("payments", null, row, SQLiteDatabase.CONFLICT_IGNORE);
+        return getWritableDatabase().insertWithOnConflict("payments", null, row, SQLiteDatabase.CONFLICT_IGNORE) != -1;
     }
     private static ContentValues values(long amount, boolean credit, String merchant, String category) {
         ContentValues row = new ContentValues();
@@ -30,6 +30,12 @@ final class Ledger extends SQLiteOpenHelper {
         row.put("merchant", merchant);
         row.put("category", category);
         return row;
+    }
+    void add(long amount, boolean credit, String merchant, String category, long time) {
+        ContentValues row = values(amount, credit, merchant, category);
+        row.put("time", time);
+        row.put("fingerprint", java.util.UUID.randomUUID().toString());
+        getWritableDatabase().insertOrThrow("payments", null, row);
     }
     void edit(long id, long amount, boolean credit, String merchant, String category, long time) {
         ContentValues row = values(amount, credit, merchant, category);

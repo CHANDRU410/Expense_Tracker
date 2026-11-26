@@ -1,19 +1,19 @@
-# SpendSense
+# SpendSense Insights
 
-An offline Android expense tracker for Indian bank SMS alerts. Open the app and enable SMS tracking to record future supported alerts. SpendSense requests RECEIVE_SMS, has no internet permission, and does not scan your inbox or save message text. Cash and unreported payments are outside its totals.
+An offline Android spending journal. The overview shows net cash flow, income and expenses for the selected dates. Tap a category in the spending breakdown to see its payments. Spending trends show daily, weekly or monthly totals according to the length of the range. The Activity tab supports search, expense/income filters, editing and deletion. Use the plus button to record cash or an unreported payment.
 
-The selected month's dashboard shows income, expenses, net cash flow and spending by category. Search the month's transactions by merchant, category, type or amount. Tap a transaction to edit or delete it.
+## Using the app
 
-## Install
+Download SpendSense.apk from Releases on an Android 8 or newer phone. The dashboard opens on the current month through today. Tap the dates beside Overview to select an inclusive start and end, including historical years. One selection covers up to six calendar months. Date filtering uses local calendar days.
 
-Download SpendSense.apk from the repository's Releases page using your Android phone (Android 8 or later). Android controls installation and SMS permission on each device. After installation open SpendSense once and grant SMS access.
+Enable SMS to record supported incoming bank alerts. To backfill a selected period, tap **Import bank SMS for this range**. This optional action requests inbox permission and processes messages on the phone. Only recognized transactions and duplicate fingerprints are stored. Import results depend on retained SMS, supported formats and permission availability. Historical edits from another installation cannot be recovered from SMS. The app has no internet permission.
 
-## Build
+The first Insights test APK installs alongside the original SpendSense build to preserve the original app and its local data. Each installation has a separate ledger and SMS permission. Re-importing identical alerts within Insights skips matching fingerprints. For alerts without a bank reference, differences in delivery timestamps between the live SMS and the inbox can prevent duplicate matching.
 
-Use JDK 17, Gradle 8.9, and Android SDK Platform 35. Run `gradle testDebugUnitTest assembleDebug`. The GitHub Actions build runs the tests, assembles the APK and verifies its signature before publishing. The first public test release uses a runner-generated debug signing key unless release secrets are configured. Builds signed with different keys cannot update each other in place. Uninstalling the app removes its local records.
+## Development
 
-For consistently signed updates, configure repository Actions secrets `SIGNING_STORE_BASE64` (base64-encoded keystore), `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS` and `SIGNING_KEY_PASSWORD` before building the version you intend to keep. Each CI run uses its run number as the version code. No signing credentials belong in the repository.
+Use JDK 17, Gradle 8.9 and Android SDK Platform 35. Run `gradle testDebugUnitTest assembleDebug`. The GitHub workflow also tests dashboard interactions in headless Chrome and verifies the APK signature before publishing.
 
-## Coverage
+Debug builds use application ID dev.spendsense.insights. A hosted runner generates a temporary debug key. For in-place updates use a consistent signing key and application ID. The release configuration accepts repository Actions secrets SIGNING_STORE_BASE64 (encoded keystore), SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS and SIGNING_KEY_PASSWORD. Keep private keys outside the repository. Uninstalling an app deletes its ledger.
 
-Only new, supported INR debit and credit alerts from alphanumeric senders are considered. The SMS delivery timestamp determines the transaction date in this version. Unrecognized merchants are editable. Reference-based duplicates are ignored. Where the bank supplies no reference, the same sender, normalized message and timestamp identify redeliveries. Different deliveries without a reference can remain separate. OTP, failed, pending and promotional messages are skipped by pattern. Parsing is rule-based and does not verify that a sender is a bank.
+Transaction classification is rule-based. Tap a row to correct the merchant or category. Balance notices, authentication codes and failed payments are filtered by pattern. SpendSense does not verify sender identity, connect to a bank account or compute its balance.
