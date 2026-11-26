@@ -129,6 +129,11 @@ public final class Dashboard extends Activity {
         @JavascriptInterface public void tracking() { runOnUiThread(()->{
             if (!granted(Manifest.permission.RECEIVE_SMS)) request(Manifest.permission.RECEIVE_SMS,1);
         }); }
+        @JavascriptInterface public void updates() { runOnUiThread(() -> {
+            Intent release = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/CHANDRU410/Expense_Tracker/releases/latest"));
+            try { startActivity(release); }
+            catch (ActivityNotFoundException e) { toast("Open SpendSense Releases on GitHub to check for updates."); }
+        }); }
         @JavascriptInterface public void add() { runOnUiThread(()->edit(null)); }
         @JavascriptInterface public void editPayment(long id) { runOnUiThread(()->{
             for (Ledger.Payment p:payments) if(p.id==id) { edit(p); break; }

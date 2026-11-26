@@ -149,3 +149,5 @@ el('add').onclick=()=>SpendSense.add();
 el('homeTab').onclick=()=>showPage('overview');
 el('activityTab').onclick=()=>showPage('activity');
 el('all').onclick=()=>{category='';type='all';el('search').value='';showPage('activity');};
+
+el('updates').onclick=()=>SpendSense.updates();

@@ -4,20 +4,27 @@ android {
     namespace 'dev.spendsense'
     compileSdk 35
     defaultConfig {
-        applicationId 'dev.spendsense'
+        applicationId 'dev.spendsense.mobile'
         minSdk 26
         targetSdk 35
         versionCode Integer.parseInt(System.getenv('GITHUB_RUN_NUMBER') ?: '1')
-        versionName '2.0'
+        versionName '2.1'
     }
-    buildTypes { debug { applicationIdSuffix '.insights' } }
+    buildTypes { debug { applicationIdSuffix '.debug' } }
     if (System.getenv('SIGNING_STORE_FILE')) {
+        def signingFile = file(System.getenv('SIGNING_STORE_FILE'))
+        def password = System.getenv('SIGNING_STORE_PASSWORD')
+        def keys = java.security.KeyStore.getInstance('PKCS12')
+        signingFile.withInputStream { keys.load(it, password.toCharArray()) }
+        def aliases = keys.aliases().toList().findAll { keys.isKeyEntry(it) }
+        if (aliases.size() != 1) throw new GradleException('Expected a single signing key')
         signingConfigs {
             production {
-                storeFile file(System.getenv('SIGNING_STORE_FILE'))
-                storePassword System.getenv('SIGNING_STORE_PASSWORD')
-                keyAlias System.getenv('SIGNING_KEY_ALIAS')
-                keyPassword System.getenv('SIGNING_KEY_PASSWORD')
+                storeFile signingFile
+                storeType 'PKCS12'
+                storePassword password
+                keyAlias aliases.first()
+                keyPassword password
             }
         }
         buildTypes.release.signingConfig = signingConfigs.production
