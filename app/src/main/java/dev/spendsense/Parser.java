@@ -16,6 +16,32 @@ final class Parser {
     private static final Pattern ACTION = pattern("\\b(debited|spent|paid|withdrawn|sent|credited|received|deposited)\\b");
     private static final Pattern AMOUNT = pattern("(?:₹|\\bINR|\\bRs\\.?)\\s*([0-9][0-9,]*(?:\\.[0-9]{1,2})?)(?![0-9.,]\\d)");
     private static final Pattern MERCHANT = pattern("\\b(?:towards|at|to|from)\\s+(?!your\\b|a/?c\\b|account\\b|INR\\b|Rs\\b)([A-Za-z0-9][A-Za-z0-9 .@&_-]{0,60}?)(?=\\s+(?:via|on|ref|UPI ref|avl|available|bal|using|txn|for Rs|for INR)\\b|[,;:/]|[.]?(?:$))");
+    private static final Pattern VPA = pattern("\\b(?:to|from|at|towards)(?:\\s+(?:vpa|upi\\s*id))?\\s*[:=-]?\\s*([a-z0-9._-]+@[a-z][a-z0-9.-]*[a-z0-9])\\b");
+    private static final Pattern LABEL = pattern("\\b(?:merchant(?:\\s+name)?|payee)\\s*[:=]\\s*([\\w .&'-]+?)(?=\\s+(?:on|via|ref|txn|UPI)\\b|[,;/]|$)");
+    private static final Pattern NARRATION = pattern("\\bUPI/(?:DR/|CR/)?\\d{6,18}/([^/;]{2,60})(?:/|;|$)");
+    private static final String[][] CATEGORY_RULES = {
+        {"Groceries","swiggyinstamart|amazonfresh|instamart|blinkit|zepto|bigbasket|big basket|dmart|d mart|grocer(?:y|ies)|supermarket|super market|kirana|freshmart|amazon fresh"},
+        {"Food and Dining","swiggy|zomato|restaurant|cafe|bakery|biryani|domino(?:s)?|starbucks|canteen|eatclub|pizza|mcdonald(?:s)?"},
+        {"Transport","uber|ola(?: cabs)?|rapido|irctc|metro|redbus|railway|fastag|petrol|fuel"},
+        {"Health","pharmacy|pharma|medical store|hospital|medplus|netmeds|1mg"},
+        {"Bills and Utilities","electricity|broadband|airtel|jio|bescom|tangedco|water bill"},
+        {"Entertainment","netflix|spotify|bookmyshow|cinema|hotstar"},
+        {"Shopping","amazon|flipkart|myntra|ajio|meesho|decathlon"}
+    };
+    private static final Pattern[] CATEGORY_MATCHERS = new Pattern[CATEGORY_RULES.length];
+    static {
+        for (int i=0;i<CATEGORY_RULES.length;i++) {
+            CATEGORY_MATCHERS[i]=pattern("\\b(?:" + CATEGORY_RULES[i][1] + ")(?:\\b|(?=\\d))");
+        }
+    }
+    static String expenseCategory(String merchant) {
+        String local = merchant.split("@", 2)[0].toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", " ").trim();
+        for (int i=0;i<CATEGORY_MATCHERS.length;i++) {
+            if (CATEGORY_MATCHERS[i].matcher(local).find()) return CATEGORY_RULES[i][0];
+        }
+        return "Other";
+    }
     private static final Pattern REF = pattern("\\b(?:UPI[ /-]*(?:ref(?:erence)?|txn)|UTR|RRN|ref(?:erence)?|txn id)\\s*(?:no\\.?|id)?[ .:#/-]*([A-Z0-9]{6,32})\\b");
 
     final long paise;
@@ -47,14 +73,13 @@ final class Parser {
         if (paise <= 0 || paise > 100000000000000L) return null;
         Matcher party = MERCHANT.matcher(transaction);
         String merchant = party.find() ? party.group(1).replaceAll("[. ]+$", "") : "Unknown";
-        String name = merchant.toLowerCase(Locale.ROOT);
-        String category = credit ? "Income" : "Other";
-        if (!credit) {
-            if (name.matches(".*(swiggy|zomato|restaurant|cafe).*")) category = "Food and Dining";
-            else if (name.matches(".*(uber|ola cabs|irctc|metro).*")) category = "Transport";
-            else if (name.matches(".*(bigbasket|blinkit|zepto|grocer).*")) category = "Groceries";
-            else if (name.matches(".*(amazon|flipkart|myntra).*")) category = "Shopping";
-        }
+        Matcher labelled = LABEL.matcher(transaction);
+        Matcher narration = NARRATION.matcher(transaction);
+        Matcher vpa = VPA.matcher(transaction);
+        if (labelled.find()) merchant = labelled.group(1).trim();
+        else if (narration.find()) merchant = narration.group(1).trim();
+        else if (vpa.find()) merchant = vpa.group(1);
+        String category = credit ? "Income" : expenseCategory(merchant);
         Matcher ref = REF.matcher(body);
         String identity = ref.find() ? "ref|" + ref.group(1) + "|" + credit + "|" + paise
                 : "sms|" + sender + "|" + time + "|" + body;

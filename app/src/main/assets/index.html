@@ -8,8 +8,8 @@
 <section id="overview">
 <article class="hero"><div class="weave" aria-hidden="true"></div><div class="heroContent"><div>Net cash flow</div><strong id="net">₹0</strong>
 <div class="split"><div><small>↙ Income</small><b id="income">₹0</b></div><div><small>↗ Expenses</small><b id="expenses">₹0</b></div></div></div></article>
-<article class="panel"><h2>Spending by category</h2><div class="wheel"><canvas id="donut" width="320" height="320" aria-hidden="true"></canvas><div><small>Expenses</small><b id="wheelTotal"></b></div></div><div id="legend"></div></article>
-<article class="panel"><h2>Spending trend</h2><div id="trend"></div></article>
+<article class="panel"><h2>Where your money went</h2><div id="composition" class="composition" aria-hidden="true"></div><div id="legend"></div></article>
+<article class="panel"><div class="sectionTitle chartTitle"><h2>Spending over time</h2><button class="link" id="chartDates">Edit dates</button></div><label for="scope">Category</label><select id="scope"></select><p id="scopeSummary"></p><div id="trend"></div><div id="merchants"></div></article>
 <div class="sectionTitle"><h2>Recent activity</h2><button id="all" class="link">View all →</button></div><div id="recent" class="panel rows"></div>
 </section>
 <section id="activity" hidden><div class="panel filters"><input id="search" aria-label="Search transactions" type="search" placeholder="Search merchant, category or amount">

@@ -37,27 +37,22 @@ function render(next) {
     state.rows.forEach(p=>{if(p.credit)income+=p.amount;else expense+=p.amount;});
     el('net').textContent=money(income-expense);
     el('income').textContent=money(income); el('expenses').textContent=money(expense);
-    drawCategories(groupExpenses(state.rows),expense); drawTrend();
+    const groups=groupExpenses(state.rows);
+    drawCategories(groups,expense); populateScope(groups); drawTrend();
     showRows(el('recent'),state.rows.slice(0,3),'No transactions in this range.');
     showPage(page,false);
 }
 function drawCategories(groups,total) {
-    const ctx=el('donut').getContext('2d');
-    ctx.clearRect(0,0,320,320); ctx.lineWidth=32;
-    function arc(start,end,colour) {
-        ctx.beginPath(); ctx.strokeStyle=colour; ctx.arc(160,160,130,start,end);ctx.stroke();
-    }
-    arc(0,Math.PI*2,'#e8eeea'); let angle=-Math.PI/2;
+    const strip=el('composition');strip.textContent='';strip.hidden=!groups.length;
     const legend=el('legend'); legend.textContent='';
     groups.forEach(([name,value],i)=>{
-        const colour=palette[i%palette.length],end=angle+Math.PI*2*value/total;
-        arc(angle,end,colour); angle=end;
+        const colour=palette[i%palette.length];
+        const segment=node('span');segment.style.width=(100*value/total)+'%';segment.style.background=colour;strip.appendChild(segment);
         const row=node('button','key'); const dot=node('i'); dot.style.background=colour;
         row.append(dot,node('span','',name),node('small','',Math.round(100*value/total)+'%'),node('b','',money(value)));
         row.onclick=()=>{category=name;type='expense';el('search').value='';showPage('activity');};
         legend.appendChild(row);
     });
-    el('wheelTotal').textContent=money(total);
     if(!groups.length)legend.appendChild(node('div','empty','Your expense categories will appear here after you add a payment or import bank alerts.'));
 }
 function trendBuckets(from,to,rows) {
@@ -75,17 +70,51 @@ function trendBuckets(from,to,rows) {
     rows.filter(p=>!p.credit).forEach(p=>{const bucket=buckets.find(b=>p.date>=b.start && p.date<=b.end);if(bucket)bucket.value+=p.amount;});
     return buckets;
 }
-function drawTrend() {
-    const host=el('trend');host.textContent='';
-    const buckets=trendBuckets(state.from,state.to,state.rows),max=Math.max(...buckets.map(b=>b.value));
-    if(!max){host.appendChild(node('div','empty','No expenses in this range.'));return;}
-    buckets.forEach(b=>{
-        const row=node('div','trendRow');const track=node('div','track'),bar=node('div','bar');
-        bar.style.width=(100*b.value/max)+'%';track.appendChild(bar);
-        row.append(node('span','',b.label),track,node('b','',money(b.value)));
-        row.setAttribute('aria-label',b.start+' through '+b.end+', '+money(b.value));host.appendChild(row);
-    });
+function populateScope(groups) {
+    const select=el('scope'), previous=select.value;
+    select.textContent='';
+    select.add(new Option('All categories',''));
+    groups.forEach(([name])=>select.add(new Option(name,name)));
+    if(previous && groups.some(([name])=>name===previous))select.value=previous;
 }
+function drawTrend() {
+    const host=el('trend'), merchants=el('merchants'),scope=el('scope').value;
+    host.textContent='';merchants.textContent='';
+    const expenses=state.rows.filter(p=>!p.credit);
+    const rows=expenses.filter(p=>!scope||p.category===scope);
+    const total=rows.reduce((sum,p)=>sum+p.amount,0), overall=expenses.reduce((sum,p)=>sum+p.amount,0);
+    el('scopeSummary').textContent=money(total)+' spent · '+rows.length+' payment'+(rows.length===1?'':'s')+
+        (scope && overall?' · '+Math.round(100*total/overall)+'% of expenses':'');
+    if(!rows.length){host.appendChild(node('div','empty','No expenses in this range.'));return;}
+    const buckets=trendBuckets(state.from,state.to,rows), max=Math.max(...buckets.map(b=>b.value));
+    const canvas=node('canvas','lineChart');canvas.width=720;canvas.height=200;canvas.setAttribute('aria-hidden','true');
+    host.appendChild(canvas);
+    const ctx=canvas.getContext('2d'),points=buckets.map((b,i)=>({
+        x:buckets.length===1?360:12+696*i/(buckets.length-1), y:182-160*b.value/max
+    }));
+    ctx.strokeStyle='#dbe7df';ctx.lineWidth=2;
+    [22,102,182].forEach(y=>{ctx.beginPath();ctx.moveTo(12,y);ctx.lineTo(708,y);ctx.stroke();});
+    ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+    ctx.lineWidth=5;ctx.strokeStyle='#226957';ctx.stroke();
+    points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle='#226957';ctx.fill();});
+    const axis=node('div','axis');axis.append(node('span','',buckets[0].label),node('span','',buckets.length>1?buckets[buckets.length-1].label:''));host.appendChild(axis);
+    const details=node('details');details.appendChild(node('summary','','View period totals'));
+    buckets.forEach(b=>details.appendChild(node('div','bucket',b.start+' – '+b.end+' · '+money(b.value))));
+    host.appendChild(details);
+    if(scope){
+        merchants.appendChild(node('h3','','Spending by merchant'));
+        const sums=new Map();
+        rows.forEach(p=>sums.set(p.merchant,(sums.get(p.merchant)||0)+p.amount));
+        const ranked=Array.from(sums).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+        ranked.forEach(([name,value])=>{
+            const row=node('div','merchantRow'),bar=node('div','merchantBar');
+            const label=node('div','axis');label.append(node('span','',name),node('b','',money(value)));
+            bar.style.width=100*value/ranked[0][1]+'%';row.append(label,bar);merchants.appendChild(row);
+        });
+    }
+}
+el('scope').onchange=drawTrend;
+el('chartDates').onclick=()=>el('dates').click();
 function showRows(host,rows,empty) {
     host.textContent='';
     if(!rows.length){host.appendChild(node('div','empty',empty));return;}

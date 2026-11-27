@@ -12,6 +12,15 @@ public class ParserTest {
         assertEquals("Food and Dining",p.category);
         assertFalse(p.credit);
     }
+    @Test public void recognizesMerchantAndSpendType() {
+        Parser grocery = parse("INR 390 debited to VPA: swiggy.instamart@hdfcbank on 02-01-25");
+        assertEquals("swiggy.instamart@hdfcbank",grocery.merchant);
+        assertEquals("Groceries",grocery.category);
+        assertEquals("Food and Dining",parse("INR 180 spent; merchant: Campus Canteen; txn complete").category);
+        assertEquals("Transport",parse("INR 120 debited UPI/DR/123456789012/RAPIDO/HDFC").category);
+        assertEquals("Other",parse("INR 65 paid to ravi@okaxis via UPI").category);
+        assertEquals("Other",Parser.expenseCategory("Scholarship Office"));
+    }
     @Test public void incomeAndBalance() {
         Parser p = parse("Rs. 12,345.67 credited to your A/c from ACME via IMPS. Avl Bal INR 90,000");
         assertTrue(p.credit); assertEquals(1234567L,p.paise); assertEquals("ACME",p.merchant);

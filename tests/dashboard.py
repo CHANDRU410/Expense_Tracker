@@ -15,9 +15,13 @@ function check(ok,reason){if(!ok)throw Error(reason);}
 try {
  render(data);
  check(el('net').textContent==='₹5,170','cash flow');
- check(document.querySelectorAll('.trendRow').length===6,'monthly trend');
+ check(document.querySelectorAll('.bucket').length===6,'monthly trend');
  check(trendBuckets(data.from,data.to,data.rows).reduce((sum,b)=>sum+b.value,0)===33000,'inclusive endpoints');
  check(addMonths('2023-08-31',6)==='2024-02-29','leap year');
+ check(document.querySelectorAll('#composition span').length===2,'category proportions');
+ el('scope').value='Transport';el('scope').onchange();
+ check(el('scopeSummary').textContent.includes('₹80') && el('merchants').textContent.includes('METRO') && !el('merchants').textContent.includes('SWIGGY'),'category analytics excludes other payments');
+ el('chartDates').click();check(!el('overlay').hidden,'chart date selector');el('close').click();
  document.querySelector('.key').click();
  check(el('count').textContent==='1 transaction' && el('results').textContent.includes('SWIGGY'),'category drill-down');
  el('dates').click();el('to').value='2025-06-01';el('apply').click();check(el('error').textContent.includes('six'),'oversized range');
